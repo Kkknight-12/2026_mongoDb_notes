@@ -1,0 +1,20 @@
+# macOS / local editor files
+.DS_Store
+.idea/
+
+# Learner-site paid/reference assets: do not publish these in this repo
+visual_notes/
+**/visual_notes/
+*.png
+*.jpg
+*.jpeg
+*.gif
+*.webp
+*.avif
+*.svg
+*.heic
+*.tiff
+*.bmp
+
+# Local archives / exports
+*.zip
