@@ -1,26 +1,22 @@
-# Now Codex Notes
+# Codex Notes
 
-Last updated: 2026-06-09
+Last updated: 2026-06-14
 
-This folder contains quick-reference notes for the current hands-on MongoDB
-workflow.
+This folder contains repo-local Codex notes, task trackers, and implementation
+reminders for the MongoDB learning project.
 
-Read these when you need practical setup or implementation reminders:
-
-1. `MONGODB_LOCAL_SERVER_NOTES.md` - local MongoDB commands, DataGrip setup,
-   URLs, and storage-path notes.
-2. `SAFE_PLAYGROUND_QUERY_SYNTAX.md` - safe MongoDB playground syntax, blocked
-   commands, sandbox strategy, and answer checking.
-
-For the bigger educational-platform architecture, read the root `.codex`
-folder first:
+Start here:
 
 ```text
-/Users/knight/Desktop/projects/mcp-testing/on/projects/MongoDb/.codex
+INDEX.md
 ```
 
-For daily learning notes and runnable queries, start with:
+The index lists every file in this `.codex` folder and points to the
+learner-facing root docs.
+
+Useful rule:
 
 ```text
-/Users/knight/Desktop/projects/mcp-testing/on/projects/MongoDb/now/LEARNING_WORKFLOW.md
+Keep Codex/task/memory workflow files here.
+Keep learner-facing notes and runnable practice files in the normal topic folders.
 ```
