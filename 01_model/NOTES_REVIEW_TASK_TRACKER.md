@@ -17,10 +17,10 @@ Then start the next task.
 - [x] Task 0: Create this tracker and define the review workflow.
 - [x] Task 1: Update `01_basic_model_concepts/Basic Model Concepts.md` with missing doubt explanations.
 - [x] Task 2: Review Task 1 changes.
-- [ ] Task 3: Update `02_Schema_Design_Fundamentals/notes.md` with missing doubt explanations.
-- [ ] Task 4: Review Task 3 changes.
-- [ ] Task 5: Optionally update `03_Schema_Validation/notes.md` with small missing examples from doubts/reference.
-- [ ] Task 6: Review Task 5 changes.
+- [x] Task 3: Update `02_Schema_Design_Fundamentals/notes.md` with missing doubt explanations.
+- [x] Task 4: Review Task 3 changes.
+- [x] Task 5: Optionally update `03_Schema_Validation/notes.md` with small missing examples from doubts/reference.
+- [x] Task 6: Review Task 5 changes.
 - [ ] Task 7: Final cross-topic audit of `01_model` notes and doubt coverage.
 
 ## Task 1: Basic Model Concepts
@@ -83,30 +83,30 @@ Doubt source:
 
 Add or improve explanations for:
 
-- [ ] `type: Number` vs integer validation.
-- [ ] Why `Number` allows decimals.
-- [ ] Why `Number.isInteger` is needed for integer-only fields.
-- [ ] Same validation pattern for `String`, `Array`, `Date`, and `ObjectId`.
-- [ ] What `match` is in Mongoose string fields.
-- [ ] When to use `match`.
-- [ ] When `match` is not enough and custom validation/service validation is better.
-- [ ] `validationAction: "error"`.
-- [ ] `validationAction: "warn"`.
-- [ ] `validationLevel: "strict"`.
-- [ ] `validationLevel: "moderate"`.
-- [ ] MongoDB `$jsonSchema` validation applies to Mongoose writes when the collection has a validator.
-- [ ] Which Mongoose methods still reach MongoDB validation: `create()`, `save()`, `insertMany()`, `updateOne()`, `updateMany()`, `findOneAndUpdate()`.
-- [ ] Difference between MongoDB DB-level validator and Mongoose `{ runValidators: true }`.
-- [ ] Add contextual related-doubt links near relevant sections.
+- [x] `type: Number` vs integer validation.
+- [x] Why `Number` allows decimals.
+- [x] Why `Number.isInteger` is needed for integer-only fields.
+- [x] Same validation pattern for `String`, `Array`, `Date`, and `ObjectId`.
+- [x] What `match` is in Mongoose string fields.
+- [x] When to use `match`.
+- [x] When `match` is not enough and custom validation/service validation is better.
+- [x] `validationAction: "error"`.
+- [x] `validationAction: "warn"`.
+- [x] `validationLevel: "strict"`.
+- [x] `validationLevel: "moderate"`.
+- [x] MongoDB `$jsonSchema` validation applies to Mongoose writes when the collection has a validator.
+- [x] Which Mongoose methods still reach MongoDB validation: `create()`, `save()`, `insertMany()`, `updateOne()`, `updateMany()`, `findOneAndUpdate()`.
+- [x] Difference between MongoDB DB-level validator and Mongoose `{ runValidators: true }`.
+- [x] Add contextual related-doubt links near relevant sections.
 
 Review checklist for Task 3:
 
-- [ ] Main note uses easy Hinglish explanation.
-- [ ] Flow is why -> code -> code samjho where a concept is non-trivial.
-- [ ] Doubt examples are not over-trimmed.
-- [ ] Doubt links are contextual and specific.
-- [ ] Existing section order still feels natural.
-- [ ] No unrelated refactor is introduced.
+- [x] Main note uses easy Hinglish explanation.
+- [x] Flow is why -> code -> code samjho where a concept is non-trivial.
+- [x] Doubt examples are not over-trimmed.
+- [x] Doubt links are contextual and specific.
+- [x] Existing section order still feels natural.
+- [x] No unrelated refactor is introduced.
 
 Pause after Task 3:
 
@@ -132,16 +132,16 @@ Doubt/reference sources:
 
 Consider adding:
 
-- [ ] Expected output for invalid `simulateExpressRoute` request.
-- [ ] Cleaner `async/await` version of `simulateExpressRoute`.
-- [ ] More concrete `$unset`, `$push`, `$inc` examples for update validator caveats.
+- [x] Expected output for invalid `simulateExpressRoute` request.
+- [x] Cleaner `async/await` version of `simulateExpressRoute`.
+- [x] More concrete `$unset`, `$push`, `$inc` examples for update validator caveats.
 
 Review checklist for Task 5:
 
-- [ ] Only add examples if they make revision easier.
-- [ ] Avoid making the already-large note unnecessarily heavy.
-- [ ] Keep reference-backed examples near the matching section.
-- [ ] Preserve existing contextual doubt links.
+- [x] Only add examples if they make revision easier.
+- [x] Avoid making the already-large note unnecessarily heavy.
+- [x] Keep reference-backed examples near the matching section.
+- [x] Preserve existing contextual doubt links.
 
 Pause after Task 5:
 

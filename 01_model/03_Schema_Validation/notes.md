@@ -742,6 +742,76 @@ simulateExpressRoute(
 );
 ```
 
+Expected output will look roughly like this:
+
+```txt
+API Error Response Example:
+Response Status: 400
+Response Data: {
+  "success": false,
+  "message": "Validation failed",
+  "errors": {
+    "name": "Name must be at least 2 characters long",
+    "email": "Please provide a valid email address",
+    "salary": "Salary must be at least ₹10,000",
+    "department": "Unknown is not a valid department"
+  }
+}
+```
+
+Exact error order par depend mat karo, because validation error fields ka order business logic ka base nahi hona chahiye.
+
+### Same route in async/await style
+
+Promise `.then().catch()` style valid hai, but real route handlers me async/await usually easier lagta hai.
+
+```ts
+async function simulateExpressRouteAsync(req: any, res: any) {
+  try {
+    const employee = new Employee(req.body);
+    const savedEmployee = await employee.save();
+
+    return res.status(201).json({
+      success: true,
+      data: savedEmployee
+    });
+  } catch (error: any) {
+    if (error instanceof mongoose.Error.ValidationError) {
+      const errors: Record<string, string> = {};
+
+      Object.keys(error.errors).forEach(fieldName => {
+        errors[fieldName] = error.errors[fieldName].message;
+      });
+
+      return res.status(400).json({
+        success: false,
+        message: 'Validation failed',
+        errors
+      });
+    }
+
+    if (error?.code === 11000) {
+      return res.status(409).json({
+        success: false,
+        message: 'Duplicate key error'
+      });
+    }
+
+    return res.status(500).json({
+      success: false,
+      message: 'An error occurred',
+      error: error.message
+    });
+  }
+}
+```
+
+Code samjho:
+
+- `try` block me normal successful flow hai: document banao, `save()` karo, success response return karo.
+- `catch` block me validation/duplicate/unknown error ko alag-alag response me convert kar rahe hain.
+- `return res.status(...).json(...)` current function se return karta hai, taaki same request me accidental second response na bhejo.
+
 ### Why fake `res.status().json()` works
 
 - `simulateExpressRoute(req, res)` me second object `res` parameter ban jata hai.
@@ -1416,6 +1486,70 @@ Update validators document validators jaise full document validate nahi karte.
 3. Validators kuch update operators par hi run hote hain: `$set`, `$unset`, `$push`, `$addToSet`, `$pull`, `$pullAll`.
 4. `$inc` validators ko ignore/bypass kar sakta hai.
 5. `$push` / `$addToSet` array-level validator ko full array par run nahi karte; individual elements validate ho sakte hain.
+
+### Update caveats with concrete examples
+
+#### 1. `required` update me missing field ko scan nahi karta
+
+```ts
+await Student.updateOne(
+  { rollNumber: 'STU001' },
+  { $set: { grade: 90 } },
+  { runValidators: true }
+);
+```
+
+Yeh pass ho sakta hai even if `name` required hai, because update query me `name` ko touch hi nahi kiya.
+
+```ts
+await Student.updateOne(
+  { rollNumber: 'STU001' },
+  { $unset: { name: 1 } },
+  { runValidators: true }
+);
+```
+
+Yeh fail ho sakta hai, because aap explicitly required field `name` remove kar rahe ho.
+
+#### 2. `$set` and `$push` validators run kar sakte hain
+
+```ts
+await Student.updateOne(
+  { rollNumber: 'STU001' },
+  { $set: { grade: 120 } },
+  { runValidators: true }
+);
+```
+
+Yeh fail ho sakta hai because `grade` max `100` hai and `$set` supported validation operator hai.
+
+```ts
+await Student.updateOne(
+  { rollNumber: 'STU001' },
+  { $push: { subjects: '' } },
+  { runValidators: true }
+);
+```
+
+Yeh item-level validation run kar sakta hai if array item schema me rule hai. But full array-level validator, jaise `subjects array empty nahi honi chahiye`, har `$push` par full array read karke validate nahi karta.
+
+#### 3. `$inc` validator bypass kar sakta hai
+
+```ts
+await Student.updateOne(
+  { rollNumber: 'STU001' },
+  { $inc: { grade: 200 } },
+  { runValidators: true }
+);
+```
+
+Yeh Mongoose validator ko bypass kar sakta hai because `$inc` supported update validation operators list me nahi aata.
+
+Safer options:
+
+- `$set` se final value set karo jab validation important ho.
+- Update se pehle document read karke final value calculate karo.
+- Critical constraints ke liye MongoDB collection-level validation ya business logic use karo.
 
 Related doubt:
 

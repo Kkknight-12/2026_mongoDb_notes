@@ -1,7 +1,6 @@
 # Schema Design Fundamentals in MongoDB and Mongoose
 
-> Updated notes: MongoDB schema design + Mongoose schema implementation.  
-> Style: Hinglish, with practical TypeScript examples.
+> MongoDB schema design + Mongoose schema implementation. Style: Hinglish, with practical TypeScript examples.
 
 ## Introduction
 
@@ -253,6 +252,205 @@ export const ProductModel = model<IProduct>('Product', productSchema);
 - `Mixed` flexible hai, lekin deep changes auto-detect nahi hote. Agar Mixed field ke andar nested value mutate karte ho, `doc.markModified('additionalInfo')` call karna pad sakta hai.
 - Arrays Mongoose mein by default `[]` ban jati hain. Agar field missing hi rakhna hai, `default: undefined` use karo.
 - Empty array type `[]` ya `Array` avoid karo; ye array of Mixed ban sakta hai. Prefer `[String]`, `[Number]`, `[reviewSchema]`, etc.
+
+### Code Samjho: `type` Basic Shape Hai, Validator Extra Rule Hai
+
+Mongoose mein `type` basic data category define karta hai. Validator us category ke andar stricter rule lagata hai.
+
+Simple mental model:
+
+```text
+type        = basic shape
+validators = stricter rules
+```
+
+Example:
+
+```ts
+price: {
+  type: Number,
+  required: true,
+  min: 0
+}
+```
+
+Meaning:
+
+```text
+price number hona chahiye.
+price missing nahi hona chahiye.
+price negative nahi hona chahiye.
+Decimal value allowed hai.
+```
+
+JavaScript/Mongoose `Number` family mein decimal bhi valid number hai:
+
+```text
+10
+10.5
+-3
+0
+```
+
+Isliye:
+
+```ts
+type: Number
+```
+
+integer-only rule nahi hai.
+
+Integer-only chahiye to extra validator lagao:
+
+```ts
+stock: {
+  type: Number,
+  required: true,
+  min: 0,
+  validate: {
+    validator: Number.isInteger,
+    message: 'Stock integer hona chahiye'
+  }
+}
+```
+
+Meaning:
+
+```text
+type: Number            = number family
+min: 0                  = negative allowed nahi
+Number.isInteger(value) = decimal allowed nahi
+```
+
+`integer: true` normal Mongoose schema option nahi hai. Agar BSON integer type specifically chahiye aur setup support karta hai, `Schema.Types.Int32` use kar sakte ho. Normal app validation ke liye `Number` + `Number.isInteger` easier hota hai.
+
+Same pattern other types par bhi apply hota hai:
+
+```ts
+name: {
+  type: String,
+  required: true,
+  trim: true,
+  minlength: 2,
+  maxlength: 50
+}
+```
+
+```text
+type: String = string family
+minlength/maxlength = string ke andar stricter length rule
+```
+
+```ts
+tags: {
+  type: [String],
+  validate: {
+    validator: function (tags: string[]) {
+      return tags.length <= 5;
+    },
+    message: 'Maximum 5 tags allowed'
+  }
+}
+```
+
+```text
+type: [String] = array of strings
+custom validate = array length/custom rule
+```
+
+```ts
+manufacturingDate: {
+  type: Date,
+  max: Date.now
+}
+```
+
+```text
+type: Date = Date value
+max = future date allowed nahi
+```
+
+```ts
+company: {
+  type: Schema.Types.ObjectId,
+  ref: 'Company'
+}
+```
+
+```text
+type: ObjectId = ObjectId shape
+ref = populate ke liye model hint
+```
+
+Important: `ObjectId` type check ka matlab yeh nahi ki referenced company document actually database mein exist karta hi hai. Existence check ke liye separate query/custom validation/business logic chahiye.
+
+Related doubt:
+
+- [Doubt 1: `type: Number` vs integer validation](doubt.md)
+
+### `match` String Validator
+
+`match` Mongoose ka string validator hai. Yeh check karta hai ki string regex pattern se match ho rahi hai ya nahi.
+
+Example:
+
+```ts
+email: {
+  type: String,
+  required: true,
+  lowercase: true,
+  trim: true,
+  match: [/^[^\s@]+@[^\s@]+\.[^\s@]+$/, 'Valid email provide karein']
+}
+```
+
+Code samjho:
+
+```text
+type: String = email string hona chahiye
+required = email missing nahi ho sakta
+lowercase = save se pehle lowercase karega
+trim = starting/ending spaces remove karega
+match = email pattern check karega
+```
+
+Use `match` jab string ko simple pattern follow karna ho:
+
+```text
+email basic format
+username format
+slug format
+phone number pattern
+pin code pattern
+product code pattern
+```
+
+Example:
+
+```ts
+username: {
+  type: String,
+  required: true,
+  match: [/^[a-zA-Z0-9_]+$/, 'Username sirf letters, numbers, underscore use kar sakta hai']
+}
+```
+
+`match` simple pattern checks ke liye good hai. Complex validation ke liye only regex par depend mat karo.
+
+Use better tools/places when needed:
+
+```text
+custom validate
+validator.js
+Zod/Joi/Ajv at request-body level
+business logic in service layer
+```
+
+Example: email regex basic shape check kar sakta hai, but yeh prove nahi kar sakta ki email account actually exist karta hai.
+
+Related doubt:
+
+- [Doubt 2: what is `match` in Mongoose string fields?](doubt.md)
 
 ---
 
@@ -947,6 +1145,200 @@ db.createCollection('users', {
 - Mongoose validation = application layer.
 - MongoDB `$jsonSchema` validation = database layer.
 - Strict business logic often application mein better hoti hai, but critical structural rules DB validator se enforce karna safer hota hai.
+
+### `validationAction` and `validationLevel`
+
+MongoDB collection validation mein do important options confuse kar sakte hain:
+
+```text
+validationAction = invalid document milne par MongoDB kya kare?
+validationLevel  = MongoDB kin documents ko validate kare?
+```
+
+#### `validationAction: "error"`
+
+```js
+validationAction: "error"
+```
+
+Meaning:
+
+```text
+Invalid document reject kar do.
+Insert/update fail ho jayega.
+Document collection mein save nahi hoga.
+```
+
+Example:
+
+```js
+db.createCollection('users', {
+  validator: {
+    $jsonSchema: {
+      bsonType: 'object',
+      required: ['name', 'email'],
+      properties: {
+        name: { bsonType: 'string' },
+        email: { bsonType: 'string' }
+      }
+    }
+  },
+  validationAction: 'error'
+});
+```
+
+If you insert:
+
+```js
+db.users.insertOne({
+  name: 'Amit'
+});
+```
+
+MongoDB reject karega because `email` required hai.
+
+Expected type of error:
+
+```text
+MongoServerError: Document failed validation
+```
+
+#### `validationAction: "warn"`
+
+```js
+validationAction: "warn"
+```
+
+Meaning:
+
+```text
+Invalid document allow kar do, but MongoDB logs mein warning record karo.
+```
+
+Learning/practice mein usually `error` better hai, because hume clearly dekhna hai ki invalid document reject hua.
+
+#### `validationLevel: "strict"`
+
+```js
+validationLevel: "strict"
+```
+
+Meaning:
+
+```text
+All inserts and all updates par validation apply karo.
+```
+
+`strict` default behavior hai. Agar `validationLevel` nahi likhte, MongoDB normally strict jaisa behave karta hai.
+
+#### `validationLevel: "moderate"`
+
+```js
+validationLevel: "moderate"
+```
+
+Meaning:
+
+```text
+Existing invalid documents ke saath softer behavior rakho.
+New valid documents and updates to already-valid documents rules follow karein.
+```
+
+`moderate` mainly tab useful hota hai jab collection mein pehle se old invalid data hai aur aap validation later add kar rahe ho.
+
+Simple mental model:
+
+```text
+strict   = validate everything
+moderate = existing invalid data ke saath softer behavior
+```
+
+For beginner practice:
+
+```js
+validationAction: 'error'
+```
+
+important hai.
+
+```js
+validationLevel: 'strict'
+```
+
+optional hai because default strict hota hai, but learning ke liye explicit likhna clear ho sakta hai.
+
+Related doubt:
+
+- [Doubt 3: `validationAction: "error"` vs `validationLevel: "strict"`](doubt.md)
+
+### Does MongoDB `$jsonSchema` Apply To Mongoose Methods?
+
+Yes. Agar MongoDB collection par database-level validator laga hua hai, to MongoDB us collection tak pahunchne wali writes validate kar sakta hai, chahe write Mongoose se aaye.
+
+These Mongoose methods eventually write to MongoDB:
+
+```ts
+User.create(...);
+user.save();
+User.insertMany(...);
+User.updateOne(...);
+User.updateMany(...);
+User.findOneAndUpdate(...);
+```
+
+Important condition:
+
+```text
+Mongoose model same MongoDB collection par write karna chahiye jahan validator laga hai.
+```
+
+Example:
+
+```ts
+const User = mongoose.model('User', userSchema);
+```
+
+By default yeh `users` collection mein write karega. Agar `users` collection par `$jsonSchema` validator hai, to MongoDB validator apply ho sakta hai.
+
+### Then `{ runValidators: true }` Kyun Use Karte Hain?
+
+`runValidators: true` Mongoose ke own update validators ke liye hai. Yeh MongoDB `$jsonSchema` ke liye nahi hai.
+
+Two separate layers:
+
+```text
+Mongoose schema validation:
+Node.js/Mongoose layer mein run hoti hai.
+
+MongoDB $jsonSchema validation:
+MongoDB server ke andar run hoti hai, jab write collection tak pahunchti hai.
+```
+
+Method behavior:
+
+```text
+User.create()
+user.save()
+Mongoose validation default run hoti hai.
+MongoDB validator bhi run ho sakta hai if collection has $jsonSchema.
+
+User.updateOne()
+User.updateMany()
+User.findOneAndUpdate()
+Mongoose update validators ke liye { runValidators: true } chahiye.
+MongoDB validator still run ho sakta hai if collection has $jsonSchema.
+```
+
+Small nuance:
+
+```text
+Mongoose values ko cast kar sakta hai before MongoDB ko bhejne se pehle.
+MongoDB final value validate karega jo MongoDB tak pahunchi.
+```
+
+Related doubt:
+
+- [Doubt 4: does MongoDB `$jsonSchema` validation apply to Mongoose methods?](doubt.md)
 
 ---
 
